@@ -1,10 +1,14 @@
 "use client"
 
-import type React from "react"
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Droplet, Activity, Gauge, AlertTriangle, Circle, Loader2, CheckCircle2, XCircle, Beaker } from "lucide-react"
-import { supabase } from "@/lib/supabase" // Import the client we made above
+import { useSensors } from "@/hooks/useSensors"
+import SensorStatusCard from "@/components/dashboard/SensorStatusCard"
+import ChemicalTank from "@/components/dashboard/ChemicalTank"
+import PumpStatus from "@/components/dashboard/PumpStatus"
+import DataStaleOverlay from "@/components/dashboard/DataStaleOverlay"
+import Toggle from "@/components/ui/toggle"
+import useAlarmSound from "@/hooks/useAlarmSound"
 
 interface SystemData {
   sensors: {
@@ -18,8 +22,7 @@ interface SystemData {
     pacLevel: number // 0-100%
   }
   pumps: {
-    kaporitStatus: "IDLE" | "DOSING" | "ERROR"
-    pacStatus: "IDLE" | "DOSING" | "ERROR"
+    status: "ON" | "OFF" | "ERROR"
     flowRate: number
   }
   alarms: {
@@ -38,174 +41,10 @@ const TANK_WARNING_THRESHOLD = 10 // Below 10% shows refill warning
 // UPDATED: Increased to 10 minutes because your ESP32 uploads every 5 minutes
 const DATA_STALE_THRESHOLD = 10 * 60 * 1000 
 
-function CriticalAlarmBanner({ message }: { message: string }) {
-  return (
-    <div className="sticky top-0 z-50 bg-red-600 text-white py-4 px-6 animate-pulse">
-      <div className="max-w-7xl mx-auto flex items-center justify-center gap-3">
-        <AlertTriangle className="h-8 w-8 flex-shrink-0" />
-        <div className="text-2xl font-bold uppercase tracking-wide">⚠️ CRITICAL ALARM: {message} ⚠️</div>
-        <AlertTriangle className="h-8 w-8 flex-shrink-0" />
-      </div>
-    </div>
-  )
-}
 
-function DataStaleOverlay() {
-  return (
-    <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-40 flex items-center justify-center">
-      <Card className="bg-gray-800 border-red-500 border-2 max-w-md">
-        <CardContent className="pt-6">
-          <div className="text-center space-y-4">
-            <XCircle className="h-16 w-16 text-red-500 mx-auto" />
-            <h2 className="text-2xl font-bold text-red-500">CONNECTION LOST</h2>
-            <p className="text-gray-300">Sensor data is stale. Last update more than 10 minutes ago.</p>
-            <p className="text-sm text-gray-400">Check ESP32 connection and network status.</p>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
-
-function SensorStatusCard({
-  title,
-  value,
-  unit,
-  icon: Icon,
-  isCompliant,
-  description,
-}: {
-  title: string
-  value: number
-  unit: string
-  icon: React.ElementType
-  isCompliant: boolean
-  description: string
-}) {
-  return (
-    <Card className={`${!isCompliant ? "bg-red-50 border-red-500 border-2 dark:bg-red-950" : "bg-white dark:bg-card"}`}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon className={`h-5 w-5 ${!isCompliant ? "text-red-600" : "text-blue-600"}`} />
-      </CardHeader>
-      <CardContent>
-        <div className="text-3xl font-bold">
-          {value.toFixed(2)} <span className="text-lg">{unit}</span>
-        </div>
-        <div className="flex items-center gap-2 mt-2">
-          {isCompliant ? (
-            <>
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
-              <p className="text-xs text-green-600 font-semibold">COMPLIANT</p>
-            </>
-          ) : (
-            <>
-              <AlertTriangle className="h-4 w-4 text-red-600" />
-              <p className="text-xs text-red-600 font-semibold">DANGER - OUT OF RANGE</p>
-            </>
-          )}
-        </div>
-        <p className="text-xs text-muted-foreground mt-1">{description}</p>
-      </CardContent>
-    </Card>
-  )
-}
-
-function ChemicalTank({
-  name,
-  level,
-  color,
-}: {
-  name: string
-  level: number
-  color: string
-}) {
-  const needsRefill = level < TANK_WARNING_THRESHOLD
-
-  return (
-    <Card className={needsRefill ? "border-red-500 border-2 bg-red-50 dark:bg-red-950" : ""}>
-      <CardHeader>
-        <CardTitle className="text-sm flex items-center gap-2">
-          <Beaker className="h-4 w-4" />
-          {name} Tank
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-2">
-          {/* Tank visual representation */}
-          <div className="relative h-32 w-24 mx-auto border-4 border-gray-700 rounded-b-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
-            <div
-              className={`absolute bottom-0 w-full transition-all duration-500 ${color}`}
-              style={{ height: `${level}%` }}
-            />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-2xl font-bold text-gray-900 dark:text-white z-10">{level}%</span>
-            </div>
-          </div>
-
-          {/* Status indicator */}
-          <div className="text-center">
-            {needsRefill ? (
-              <div className="flex items-center justify-center gap-1 text-red-600 font-semibold">
-                <AlertTriangle className="h-4 w-4" />
-                <span className="text-sm">REFILL NEEDED</span>
-              </div>
-            ) : (
-              <div className="flex items-center justify-center gap-1 text-green-600 font-semibold">
-                <CheckCircle2 className="h-4 w-4" />
-                <span className="text-sm">NORMAL</span>
-              </div>
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-function PumpStatus({
-  name,
-  status,
-  flowRate,
-}: {
-  name: string
-  status: "IDLE" | "DOSING" | "ERROR"
-  flowRate: number
-}) {
-  return (
-    <Card className={status === "ERROR" ? "border-red-500 border-2 bg-red-50 dark:bg-red-950" : ""}>
-      <CardHeader>
-        <CardTitle className="text-sm">{name} Pump</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col items-center gap-3">
-          {/* Pump icon with animation */}
-          <div className="relative">
-            {status === "DOSING" && <Loader2 className="h-12 w-12 text-blue-600 animate-spin" />}
-            {status === "IDLE" && <Circle className="h-12 w-12 text-gray-400" />}
-            {status === "ERROR" && <XCircle className="h-12 w-12 text-red-600" />}
-          </div>
-
-          {/* Status text */}
-          <div className="text-center">
-            <div
-              className={`text-lg font-bold ${
-                status === "DOSING" ? "text-blue-600" : status === "ERROR" ? "text-red-600" : "text-gray-600"
-              }`}
-            >
-              {status}
-            </div>
-            <div className="text-sm text-muted-foreground mt-1">Flow: {flowRate.toFixed(1)} L/min</div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
 
 export default function WTPDashboard() {
-  const [loading, setLoading] = useState(true)
-
+  // Keep tanks/pumps/alarms local for now (can be fetched later)
   const [systemData, setSystemData] = useState<SystemData>({
     sensors: {
       ph: 0,
@@ -213,14 +52,12 @@ export default function WTPDashboard() {
       tds: 0,
       lastUpdated: 0,
     },
-    // Note: Since we only have sensors in Supabase, we keep tanks/pumps as static/mock for now
     tanks: {
-      kaporitLevel: 45,
-      pacLevel: 8, 
+      kaporitLevel: 4,
+      pacLevel: 10,
     },
     pumps: {
-      kaporitStatus: "IDLE",
-      pacStatus: "IDLE",
+      status: "OFF",
       flowRate: 12.5,
     },
     alarms: {
@@ -229,54 +66,23 @@ export default function WTPDashboard() {
     },
   })
 
-  // FETCH FUNCTION
-  const fetchLatestData = async () => {
-    try {
-      // Get the single most recent row
-      const { data, error } = await supabase
-        .from('sensor_readings')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(1)
+  // Use React Query hook to fetch sensor data
+  const { data: sensorData, isLoading: sensorsLoading, isError, error } = useSensors()
 
-      if (error) {
-        console.error("Supabase Error Details:", JSON.stringify(error, null, 2))
-        console.error("Error Message:", error.message) 
-        console.error("Error Hint:", error.hint)
-        return
-      }
-
-      if (data && data.length > 0) {
-        const latest = data[0]
-        
-        // Convert timestamp string to number
-        const lastUpdatedTime = new Date(latest.created_at).getTime()
-
-        setSystemData(prev => ({
-          ...prev,
-          sensors: {
-            ph: latest.ph,
-            turbidity: latest.turbidity,
-            tds: latest.tds,
-            lastUpdated: lastUpdatedTime
-          }
-        }))
-      }
-      setLoading(false)
-    } catch (err) {
-      console.error("Fetch Error:", err)
-    }
-  }
-
-  // EFFECT: Fetch on mount + Polling
+  // When sensorData arrives, merge into local state for existing consumers
   useEffect(() => {
-    fetchLatestData() // Immediate fetch
-
-    // Poll every 10 seconds to catch the 5-minute update
-    const interval = setInterval(fetchLatestData, 10000)
-
-    return () => clearInterval(interval)
-  }, [])
+    if (sensorData) {
+      setSystemData(prev => ({
+        ...prev,
+        sensors: {
+          ph: sensorData.ph,
+          turbidity: sensorData.turbidity,
+          tds: sensorData.tds,
+          lastUpdated: sensorData.lastUpdated,
+        },
+      }))
+    }
+  }, [sensorData])
 
   // Check if data is stale
   // Use a fallback for initial load (0) so it doesn't show "Stale" immediately
@@ -289,18 +95,30 @@ export default function WTPDashboard() {
   const turbidityCompliant = systemData.sensors.turbidity <= COMPLIANCE_LIMITS.turbidity.max
   const tdsCompliant = systemData.sensors.tds <= COMPLIANCE_LIMITS.tds.max
 
-  if (loading) {
+  // Alarm / warning detection (include tank levels)
+  const tankWarning = systemData.tanks.kaporitLevel < TANK_WARNING_THRESHOLD || systemData.tanks.pacLevel < TANK_WARNING_THRESHOLD
+  const hasWarning = !phCompliant || !turbidityCompliant || !tdsCompliant || tankWarning
+
+  // Sound hook
+  const { enabled: alarmEnabled, enable: enableAlarm, disable: disableAlarm, playAlarm, stopAlarm } = useAlarmSound()
+
+  // Play/stop alarm sound when warning appears or clears
+  useEffect(() => {
+    if (hasWarning && alarmEnabled) playAlarm()
+    else stopAlarm()
+  }, [hasWarning, alarmEnabled])
+
+  if (sensorsLoading && systemData.sensors.lastUpdated === 0) {
     return (
-        <div className="min-h-screen flex items-center justify-center">
-            <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+      </div>
     )
   }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-background">
       {/* Critical Alarm Banner */}
-      {systemData.alarms.active && <CriticalAlarmBanner message={systemData.alarms.message} />}
 
       {/* Data Staleness Overlay */}
       {isDataStale && <DataStaleOverlay />}
@@ -315,10 +133,23 @@ export default function WTPDashboard() {
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Water Treatment Plant Dashboard</h1>
               </div>
               <div className="text-right">
-                <div className="flex items-center gap-2 justify-end">
-                  <Activity className="h-5 w-5 text-green-600 animate-pulse" />
-                  <span className="text-sm font-semibold text-green-600">SYSTEM ACTIVE</span>
+                <div className="flex items-center gap-4 justify-end">
+                  <div className="flex items-center gap-2">
+                    <Activity className="h-5 w-5 text-green-600 animate-pulse" />
+                    <span className="text-sm font-semibold text-green-600">SYSTEM ACTIVE</span>
+                  </div>
+
+                  {/* Alarm sound toggle */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Alarm</span>
+                    <Toggle
+                      aria-label="Enable alarm sounds"
+                      checked={alarmEnabled}
+                      onChange={(checked) => (checked ? enableAlarm() : disableAlarm())}
+                    />
+                  </div>
                 </div>
+
                 <p className="text-xs text-muted-foreground mt-1">
                   Last Update: {new Date(systemData.sensors.lastUpdated).toLocaleTimeString()}
                 </p>
@@ -376,13 +207,31 @@ export default function WTPDashboard() {
             {/* Dosing Pumps */}
             <div>
               <h3 className="text-lg font-medium mb-3 text-foreground">Dosing Pumps</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
                 <PumpStatus
-                  name="Kaporit"
-                  status={systemData.pumps.kaporitStatus}
+                  name="Dosing Pump"
+                  status={systemData.pumps.status}
                   flowRate={systemData.pumps.flowRate}
+                  onToggle={async (newStatus) => {
+                    const prev = systemData.pumps.status
+                    // Optimistic update
+                    setSystemData(prevState => ({
+                      ...prevState,
+                      pumps: { ...prevState.pumps, status: newStatus },
+                    }))
+                    try {
+                      const { setPumpStatus } = await import('@/lib/pumps')
+                      await setPumpStatus('main', newStatus)
+                    } catch (err) {
+                      console.error('Failed to update pump status:', err)
+                      // Revert on error
+                      setSystemData(prevState => ({
+                        ...prevState,
+                        pumps: { ...prevState.pumps, status: prev },
+                      }))
+                    }
+                  }}
                 />
-                <PumpStatus name="PAC" status={systemData.pumps.pacStatus} flowRate={systemData.pumps.flowRate * 0.8} />
               </div>
             </div>
           </section>
