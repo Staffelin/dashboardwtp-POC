@@ -34,3 +34,30 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+---
+
+## Local setup (env & deps) 🔧
+
+This project uses Supabase for backend data and React Query for client-side data fetching. Follow these steps to run locally:
+
+1. Copy `.env.local.example` to `.env.local` and fill values:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_your_anon_key_here
+```
+
+2. Install dependencies and start dev server:
+
+```bash
+npm install
+npm run dev
+```
+
+3. Open http://localhost:3000
+
+Notes:
+- `.env.local` is ignored by `.gitignore` and should not be committed.  
+- React Query is used to poll sensor data every 10s; adjust settings in `hooks/useSensors.ts` if needed.
+
