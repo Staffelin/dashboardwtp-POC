@@ -7,11 +7,13 @@ export default function Toggle({
   onChange,
   disabled = false,
   "aria-label": ariaLabel,
+  className = "",
 }: {
   checked: boolean
   onChange: (next: boolean) => void
   disabled?: boolean
   "aria-label"?: string
+  className?: string
 }) {
   return (
     <button
@@ -20,7 +22,7 @@ export default function Toggle({
       aria-label={ariaLabel}
       disabled={disabled}
       onClick={() => !disabled && onChange(!checked)}
-      className={`relative inline-flex items-center h-8 w-14 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-60`}
+      className={`relative inline-flex items-center h-8 w-14 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-60 ${className}`}
     >
       <span
         className={`absolute left-0 top-0 h-8 w-14 rounded-full transition-colors ${checked ? 'bg-green-400' : 'bg-gray-300'} `}

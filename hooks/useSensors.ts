@@ -7,10 +7,12 @@ export function useSensors() {
     queryKey: ["sensors", "latest"],
     queryFn: fetchLatestSensorReading,
 
-    refetchInterval: 10_000,
+    refetchInterval: false,
+    staleTime: 30000,
 
     placeholderData: keepPreviousData,
 
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
   })
+
 }

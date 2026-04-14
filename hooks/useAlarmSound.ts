@@ -33,6 +33,10 @@ export default function useAlarmSound() {
     if (isPlayingRef.current) return
     isPlayingRef.current = true
 
+    if (ctx.state === 'suspended') {
+      ctx.resume().then(() => console.log('Audio resumed')).catch(e => console.error('Audio resume failed:', e))
+    }
+
     // Play a short beep every 600ms
     intervalRef.current = window.setInterval(() => {
       const o = ctx.createOscillator()
@@ -86,5 +90,5 @@ export default function useAlarmSound() {
     }
   }, [])
 
-  return { enabled, enable, disable, playAlarm, stopAlarm }
+  return { enabled, enable, disable, playAlarm, stopAlarm,ensureCtx }
 }
