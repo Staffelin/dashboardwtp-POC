@@ -51,11 +51,9 @@ export default function Dashboard() {
   const isStale = Date.now() - lastUpdated > DATA_STALE_THRESHOLD
 
   useEffect(() => {
-    if (!sessionLoading && !user) {
-      router.push('/login')
-    }
-  }, [user, sessionLoading, router])
-  
+    const interval = setInterval(() => setCurrentTime(new Date()), 1000)
+    return () => clearInterval(interval)
+  }, [])
   
   useEffect(() => {
     if (!sensorsLoading && hasWarning && enabled) {
