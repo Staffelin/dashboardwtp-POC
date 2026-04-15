@@ -18,6 +18,8 @@ interface ChemicalTankProps {
 
 export default function ChemicalTank({ name, level, color }: ChemicalTankProps) {
   const [displayLevel, setDisplayLevel] = useState(0)
+  const isCompliant = level >= TANK_ZONES.LOW
+
 
   // Animated level counter
   useEffect(() => {
@@ -62,7 +64,7 @@ export default function ChemicalTank({ name, level, color }: ChemicalTankProps) 
     >
       <Card className={`
         w-full max-w-sm mx-auto group-hover:shadow-2xl transition-all duration-500 overflow-hidden relative
-        ${isLow ? 'border-red-500 border-4 shadow-red-500/25' : 'border-emerald-400 border-2 shadow-emerald-200/50'}
+        ${isLow ? 'border-red-500 border-4 shadow-red-500/25' : 'border-gray-400 border-2 shadow-gray-200/50'}
         bg-linear-to-br from-slate-50/80 via-white/50 to-slate-100/80 dark:from-slate-900/80 dark:via-slate-800/50 dark:to-slate-900/80 backdrop-blur-xl
       `}>
         
@@ -74,6 +76,24 @@ export default function ChemicalTank({ name, level, color }: ChemicalTankProps) 
               <Beaker className={`h-6 w-6 ${status.textColor}`} />
             </div>
             <CardTitle className="text-xl font-bold">{name}</CardTitle>
+            {!isCompliant && (
+                <motion.div
+                  animate={{ rotate: [-10, 10, -10] }}
+                  transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <AlertTriangle className="h-8 w-8 text-red-500 drop-shadow-lg" />
+                </motion.div>
+              )}
+
+            {isCompliant && (
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <CheckCircle2 className="h-8 w-8 text-emerald-500 drop-shadow-lg" />
+              </motion.div>
+            )}
           </div>
         </CardHeader>
 

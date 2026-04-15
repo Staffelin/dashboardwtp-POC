@@ -67,8 +67,8 @@ export default function SensorStatusCard({
   }
 
   const getBorderColor = () => {
-    if (!isCompliant) return "border-red-500 shadow-red-200 dark:border-red-800 dark:shadow-red-900/50"
-    return "border-emerald-400 shadow-emerald-200 dark:border-emerald-800 dark:shadow-emerald-900/50"
+    if (!isCompliant) return "border-red-600 shadow-red-200 dark:border-red-800 dark:shadow-red-900/50"
+    return "border-gray-400 shadow-gray-200 dark:border-emerald-800 dark:shadow-emerald-900/50"
   }
 
   return (
@@ -103,16 +103,22 @@ export default function SensorStatusCard({
                 <CardDescription className="text-sm">{description}</CardDescription>
               </div>
             </div>
-            <motion.div
-              animate={{ rotate: isCompliant ? 360 : -360 }}
-              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            >
-              {isCompliant ? (
-                <CheckCircle2 className="h-8 w-8 text-emerald-500 drop-shadow-lg" />
-              ) : (
+            {!isCompliant ? (
+              <motion.div
+                animate={{ rotate: [-10, 10, -10] }}
+                transition={{ duration: 0.5, repeat: Infinity, ease: "easeInOut" }}
+              >
                 <AlertTriangle className="h-8 w-8 text-red-500 drop-shadow-lg" />
-              )}
-            </motion.div>
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <CheckCircle2 className="h-8 w-8 text-emerald-500 drop-shadow-lg" />
+              </motion.div>
+            )}
           </div>
         </CardHeader>
 

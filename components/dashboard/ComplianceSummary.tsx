@@ -65,27 +65,27 @@ export default function ComplianceSummary({
           <div className={`p-2 rounded-md text-center ${
             sensors.phCompliant ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
           }`}>
-            pH ✓
+            pH {sensors.phCompliant ? "✓" : "✗"}
           </div>
           <div className={`p-2 rounded-md text-center ${
             sensors.turbidityCompliant ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
           }`}>
-            Turbidity ✓
+            Turbidity {sensors.turbidityCompliant ? "✓" : "✗"}
           </div>
           <div className={`p-2 rounded-md text-center ${
             sensors.tdsCompliant ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
           }`}>
-            TDS ✓
+            TDS {sensors.tdsCompliant ? "✓" : "✗"}
           </div>
           <div className={`p-2 rounded-md text-center ${
             tanks.kaporitOk ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
           }`}>
-            Kaporit ✓
+            Kaporit {tanks.kaporitOk ? "✓" : "✗"}
           </div>
-          <div className={`p-2 rounded-md text-center col-span-1 ${
+          <div className={`p-2 rounded-md text-center ${
             tanks.pacOk ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
           }`}>
-            PAC ✓
+            PAC {tanks.pacOk ? "✓" : "✗"}
           </div>
         </div>
       </CardContent>
